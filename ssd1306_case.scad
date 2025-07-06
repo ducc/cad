@@ -66,7 +66,7 @@ module wall_cutout() {
                 square([screen_width+wall_width*2, 1]);
 }
 
-module case() {
+module case_back() {
     // Right stand
     translate([wall_width, 13.5, 0]) stand();
 
@@ -85,8 +85,6 @@ module case() {
         pinhole();
     }
 }
-
-case();
 
 lid_overhang = 1.5;
 lid_width = (screen_width+wall_width*2)+lid_overhang;
@@ -139,12 +137,17 @@ module lid_lip() {
         }
 }
 
-rotate([0, 180, 0])
-    translate([0, 50, -13])
-        union() {
-            difference() {
-                lid();
-                lid_walls();
+module case_front() {
+    rotate([0, 180, 0])
+        translate([0, 50, -13])
+            union() {
+                difference() {
+                    lid();
+                    lid_walls();
+                }
+                lid_lip();
             }
-            lid_lip();
         }
+    
+case_back();
+case_front();
