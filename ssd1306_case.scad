@@ -42,7 +42,6 @@ module stand() {
 
 
 module slide_cutout() {
-    //translate([0, 0, wall_height-2])
     color("red")
         translate([-0.5, -0.5, wall_height-2])
             difference() {    
@@ -94,13 +93,19 @@ lid_width = (screen_width+wall_width*2)+lid_overhang;
 lid_height = (screen_height+wall_width*2)+lid_overhang;
 
 module lid() {   
-    color("red")
         translate([-(lid_overhang/2), -(lid_overhang/2), 10])
-            linear_extrude(3)
-                square([
-                    lid_width, 
-                    lid_height
-                ]);
+            difference() {
+                color("red")
+                    linear_extrude(3)
+                        square([
+                            lid_width, 
+                            lid_height
+                        ]);
+                color("pink")
+                    translate([3, 6, -3])
+                        linear_extrude(10)
+                            square([lid_width-6, 14]);
+            }
 }
 
 module lid_walls() {
