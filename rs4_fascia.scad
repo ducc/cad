@@ -307,7 +307,7 @@ module tablet() {
         //    linear_extrude(20)
         //        square([20, 38]);
         // charging port
-        translate([-2, (tablet_height-30)/2, 0]) // TODO: put x back to 0 to not leave gap in fascia
+        translate([-3, (tablet_height-30)/2, 0]) // TODO: put x back to 0 to not leave gap in fascia
             linear_extrude(20) // TODO: reduce height to not leave a gap in the fascia
                 square([30, 30]);
     }
