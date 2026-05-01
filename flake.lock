@@ -1,0 +1,95 @@
+{
+  "nodes": {
+    "bosl2-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777626367,
+        "narHash": "sha256-sicq4x7/fcxDMVWo0SORlR1pOXrV6fKAtoKUMc4lyIM=",
+        "owner": "BelfrySCAD",
+        "repo": "BOSL2",
+        "rev": "e4822cf04d83882db1c986624f4a566c31d123da",
+        "type": "github"
+      },
+      "original": {
+        "owner": "BelfrySCAD",
+        "repo": "BOSL2",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1777268161,
+        "narHash": "sha256-bxrdOn8SCOv8tN4JbTF/TXq7kjo9ag4M+C8yzzIRYbE=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "quackworks-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1770182137,
+        "narHash": "sha256-+6R5Tnqglp3QusqCMQYA3bA4xbGCUIcwTRaNaSOoxVU=",
+        "owner": "AndyLevesque",
+        "repo": "QuackWorks",
+        "rev": "61231295ea08c302eff32051769113c48cbda255",
+        "type": "github"
+      },
+      "original": {
+        "owner": "AndyLevesque",
+        "repo": "QuackWorks",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "bosl2-src": "bosl2-src",
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs",
+        "quackworks-src": "quackworks-src"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
