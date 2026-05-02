@@ -79,6 +79,26 @@ module shell() {
             cube([cavity_w, rim_thickness, rim_height]);
         translate([wall, outer_d - rim_thickness, lip_thickness])
             cube([cavity_w, rim_thickness, rim_height]);
+
+        // X brace across the bottom opening — two diagonal struts running
+        // corner-to-corner of the lip's inner perimeter. Stiffens the floor
+        // frame and adds extra bearing area under the device's centerline.
+        x_brace_width = 5;
+        x_l = wall + lip_depth;
+        x_r = wall + cavity_w - lip_depth;
+        y_f = lip_depth;
+        y_r = outer_d - lip_depth;
+        bx_dx = x_r - x_l;
+        bx_dy = y_r - y_f;
+        bx_len = sqrt(bx_dx * bx_dx + bx_dy * bx_dy);
+        translate([x_l, y_f, 0])
+            rotate([0, 0, atan2(bx_dy, bx_dx)])
+                translate([0, -x_brace_width / 2, 0])
+                    cube([bx_len, x_brace_width, lip_thickness]);
+        translate([x_r, y_f, 0])
+            rotate([0, 0, atan2(bx_dy, -bx_dx)])
+                translate([0, -x_brace_width / 2, 0])
+                    cube([bx_len, x_brace_width, lip_thickness]);
     }
 }
 
