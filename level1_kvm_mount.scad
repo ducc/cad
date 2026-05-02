@@ -33,7 +33,7 @@ outer_h = cavity_h + lip_thickness + top_thickness;
 // ---- Snap layout: 5 × 3 lite snaps at 28 mm pitch on the top baseplate ----
 snap_pitch  = 28;
 snap_h_lite = 3.4;
-snaps_nx    = 4;
+snaps_nx    = 5;
 snaps_ny    = 3;
 
 snap_span_x = (snaps_nx - 1) * snap_pitch;
@@ -141,12 +141,17 @@ module honeycomb_holes() {
 
 module snaps() {
     // Cap face down (against panel), gripping nubs up into the grid hole.
-    for (i = [0 : snaps_nx - 1], j = [0 : snaps_ny - 1])
-        translate([snap_x0 + i * snap_pitch,
-                   snap_y0 + j * snap_pitch,
-                   outer_h + snap_h_lite])
-            rotate([180, 0, 0])
-                openGridSnap(lite=true, anchor=BOTTOM);
+    // Perimeter-only: skip the interior of the grid, keep all edge cells.
+    for (i = [0 : snaps_nx - 1], j = [0 : snaps_ny - 1]) {
+        on_perimeter = (i == 0 || i == snaps_nx - 1 ||
+                        j == 0 || j == snaps_ny - 1);
+        if (on_perimeter)
+            translate([snap_x0 + i * snap_pitch,
+                       snap_y0 + j * snap_pitch,
+                       outer_h + snap_h_lite])
+                rotate([180, 0, 0])
+                    openGridSnap(lite=true, anchor=BOTTOM);
+    }
 }
 
 difference() {
