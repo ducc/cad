@@ -104,9 +104,12 @@ module retention_lip() {
 }
 
 module snaps() {
+    // Flip so the cap face is at the cradle top (against the panel) and the
+    // gripping nubs point up into the grid hole.
     for (cx = [snap_x1, snap_x2], cy = [snap_y1, snap_y2])
-        translate([cx, cy, outer_h])
-            openGridSnap(lite=true, anchor=BOTTOM);
+        translate([cx, cy, outer_h + snap_h_lite])
+            rotate([180, 0, 0])
+                openGridSnap(lite=true, anchor=BOTTOM);
 }
 
 difference() {
