@@ -24,7 +24,7 @@
         scadLibs = pkgs.runCommand "scad-libs" { } ''
           mkdir -p $out/BOSL2 $out/openGrid
           cp -r ${bosl2-src}/. $out/BOSL2/
-          cp ${quackworks-src}/openGrid/opengrid-snap.scad $out/openGrid/
+          cp -r ${quackworks-src}/openGrid/. $out/openGrid/
         '';
       in
       {
