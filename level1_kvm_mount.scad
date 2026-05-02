@@ -33,7 +33,7 @@ outer_h = cavity_h + lip_thickness + top_thickness;
 // ---- Snap layout: 5 × 3 lite snaps at 28 mm pitch on the top baseplate ----
 snap_pitch  = 28;
 snap_h_lite = 3.4;
-snaps_nx    = 5;
+snaps_nx    = 4;
 snaps_ny    = 3;
 
 snap_span_x = (snaps_nx - 1) * snap_pitch;
