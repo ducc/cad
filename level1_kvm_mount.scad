@@ -15,7 +15,7 @@ device_h = 58;    // Z (between bottom lip and snap baseplate)
 clearance     = 0.5;
 clearance_z   = 0.5;   // headroom above the seated device
 wall          = 5;     // chunky side legs — they carry the device's weight
-top_thickness = 4;
+top_thickness = 3;
 lip_thickness = 2;     // Z height of bottom retention lip
 lip_depth     = 7;     // X distance the lip protrudes into the cavity
 rim_thickness = 2;     // Y thickness of front/rear retention rims
@@ -45,6 +45,10 @@ snap_y0 = (outer_d - snap_span_y) / 2;
 hex_R     = 6;     // hex outer radius (vertex-to-center)
 hex_gap   = 2;     // wall thickness between adjacent hex cells
 hc_margin = 6;     // solid frame around the honeycomb area on each side wall
+
+// ---- Baseplate window (over the missing 3 middle snap cells) ----
+baseplate_window_w = 70;
+baseplate_window_d = 20;
 
 module shell() {
     union() {
@@ -139,6 +143,17 @@ module honeycomb_holes() {
     honeycomb_cutout(outer_w - wall);   // right wall
 }
 
+// Cuts a rectangular window through the snap baseplate in the empty middle
+// area between the perimeter snaps. Saves filament without compromising
+// snap attachment (each remaining snap keeps a generous solid surround).
+module baseplate_window() {
+    eps = 1;
+    translate([(outer_w - baseplate_window_w) / 2,
+               (outer_d - baseplate_window_d) / 2,
+               outer_h - top_thickness - eps])
+        cube([baseplate_window_w, baseplate_window_d, top_thickness + 2 * eps]);
+}
+
 module snaps() {
     // Cap face down (against panel), gripping nubs up into the grid hole.
     // Perimeter-only: skip the interior of the grid, keep all edge cells.
@@ -157,5 +172,6 @@ module snaps() {
 difference() {
     shell();
     honeycomb_holes();
+    baseplate_window();
 }
 snaps();
