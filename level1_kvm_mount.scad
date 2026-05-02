@@ -41,10 +41,10 @@ snap_span_y = (snaps_ny - 1) * snap_pitch;
 snap_x0 = (outer_w - snap_span_x) / 2;
 snap_y0 = (outer_d - snap_span_y) / 2;
 
-// ---- Honeycomb cutouts on the side walls ----
-hex_R     = 6;     // hex outer radius (vertex-to-center)
-hex_gap   = 2;     // wall thickness between adjacent hex cells
-hc_margin = 6;     // solid frame around the honeycomb area on each side wall
+// ---- Side-wall X bracing ----
+sw_frame_margin = 6;   // solid frame around the braced area on each side wall
+sw_brace_cells  = 3;   // number of side-by-side X-brace cells per side wall
+sw_strut_width  = 5;   // strut width for X braces and inter-cell verticals
 
 // ---- Baseplate window (over the missing 3 middle snap cells) ----
 baseplate_window_w = 70;
@@ -106,41 +106,54 @@ module shell() {
     }
 }
 
-module honeycomb_2d(width, height, R, gap) {
-    pitch_x = R * sqrt(3) + gap;
-    pitch_y = R * 1.5 + gap * sqrt(3) / 2;
+// 2D X brace inside a w × h rectangle anchored at the origin.
+module xbrace_2d(w, h, strut) {
+    diag = sqrt(w * w + h * h);
+    angle = atan2(h, w);
+    rotate(angle)
+        translate([0, -strut / 2])
+            square([diag, strut]);
+    translate([0, h])
+        rotate(-angle)
+            translate([0, -strut / 2])
+                square([diag, strut]);
+}
 
-    n_cols = ceil(width / pitch_x) + 2;
-    n_rows = ceil(height / pitch_y) + 2;
+// 2D void shape for one side wall (in the YZ plane, treated here as XY).
+// A plain rectangular cutout, with X braces + inter-cell verticals kept
+// solid by subtracting them from the cutout.
+module side_wall_void_2d() {
+    sw_y_span = outer_d;
+    sw_z_span = outer_h - top_thickness;
+    inner_w = sw_y_span - 2 * sw_frame_margin;
+    inner_h = sw_z_span - 2 * sw_frame_margin;
+    cell_w  = inner_w / sw_brace_cells;
 
-    intersection() {
-        union() {
-            for (row = [-1 : n_rows]) {
-                x_offset = (row % 2 != 0) ? pitch_x / 2 : 0;
-                for (col = [-1 : n_cols])
-                    translate([col * pitch_x + x_offset, row * pitch_y])
-                        rotate(30)
-                            circle(r=R, $fn=6);
-            }
-        }
-        square([width, height]);
+    difference() {
+        translate([sw_frame_margin, sw_frame_margin])
+            square([inner_w, inner_h]);
+        for (c = [0 : sw_brace_cells - 1])
+            translate([sw_frame_margin + c * cell_w, sw_frame_margin])
+                xbrace_2d(cell_w, inner_h, sw_strut_width);
+        if (sw_brace_cells > 1)
+            for (c = [1 : sw_brace_cells - 1])
+                translate([sw_frame_margin + c * cell_w - sw_strut_width / 2,
+                           sw_frame_margin])
+                    square([sw_strut_width, inner_h]);
     }
 }
 
-module honeycomb_cutout(x_start) {
+module side_wall_void(x_start) {
     eps = 1;
-    area_y = outer_d - 2 * hc_margin;
-    area_z = (outer_h - top_thickness) - lip_thickness - 2 * hc_margin;
-
-    translate([x_start - eps, hc_margin, lip_thickness + hc_margin])
+    translate([x_start - eps, 0, 0])
         rotate([90, 0, 90])
             linear_extrude(wall + 2 * eps)
-                honeycomb_2d(area_y, area_z, hex_R, hex_gap);
+                side_wall_void_2d();
 }
 
-module honeycomb_holes() {
-    honeycomb_cutout(0);                // left wall
-    honeycomb_cutout(outer_w - wall);   // right wall
+module side_wall_voids() {
+    side_wall_void(0);
+    side_wall_void(outer_w - wall);
 }
 
 // Cuts a rectangular window through the snap baseplate in the empty middle
@@ -171,7 +184,7 @@ module snaps() {
 
 difference() {
     shell();
-    honeycomb_holes();
+    side_wall_voids();
     baseplate_window();
 }
 snaps();
