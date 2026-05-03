@@ -29,7 +29,10 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = [ pkgs.openscad-unstable ];
+          buildInputs = [
+            pkgs.openscad-unstable
+            pkgs.imagemagick      # for tests/run.sh image regression
+          ];
 
           shellHook = ''
             export OPENSCADPATH=${scadLibs}
