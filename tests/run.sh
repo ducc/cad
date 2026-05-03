@@ -25,6 +25,14 @@ mkdir -p "$SNAPSHOTS_DIR" "$DIFFS_DIR"
 TMP_DIR="$(mktemp -d)"
 trap "rm -rf $TMP_DIR" EXIT
 
+# OpenSCAD's offscreen renderer still needs a display. On CI / headless
+# machines, wrap it with xvfb-run so it gets a virtual one.
+if [[ -n "${DISPLAY:-}" ]]; then
+    OSCAD=(openscad)
+else
+    OSCAD=(xvfb-run -a openscad)
+fi
+
 # Each shot: scad_file shot_name camera imgsize
 # Camera is OpenSCAD gimbal: tx,ty,tz,rx,ry,rz,dist
 SHOTS=(
@@ -64,11 +72,11 @@ for shot in "${SHOTS[@]}"; do
 
     # Render
     render_log="$TMP_DIR/$base.log"
-    if ! openscad --colorscheme=Cornfield \
-                  --imgsize="$imgsize" \
-                  --camera="$camera" \
-                  -o "$rendered" \
-                  "$REPO_ROOT/$scad" >"$render_log" 2>&1; then
+    if ! "${OSCAD[@]}" --colorscheme=Cornfield \
+                       --imgsize="$imgsize" \
+                       --camera="$camera" \
+                       -o "$rendered" \
+                       "$REPO_ROOT/$scad" >"$render_log" 2>&1; then
         echo "RENDER FAIL"
         cat "$render_log"
         fail_count=$((fail_count + 1))

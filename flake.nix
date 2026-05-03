@@ -32,6 +32,7 @@
           buildInputs = [
             pkgs.openscad-unstable
             pkgs.imagemagick      # for tests/run.sh image regression
+            pkgs.xvfb-run         # virtual display so openscad can render headless on CI
           ];
 
           shellHook = ''
