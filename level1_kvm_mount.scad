@@ -183,6 +183,36 @@ module baseplate_window() {
         cube([outer_w + 2 * eps, cut_y_hi - cut_y_lo, z_h]);
 }
 
+// Diagonal X brace across the top plate connecting opposite corner pads.
+// Added after the baseplate cuts (otherwise they'd remove it).
+module top_x_brace() {
+    snap_w = 24.8;
+    snap_x_l = snap_x0;
+    snap_x_r = snap_x0 + (snaps_nx - 1) * snap_pitch;
+    snap_y_t = snap_y0;
+    snap_y_b = snap_y0 + (snaps_ny - 1) * snap_pitch;
+
+    pad_inner_x_l = snap_x_l + snap_w / 2 + baseplate_pad_clearance;
+    pad_inner_x_r = snap_x_r - snap_w / 2 - baseplate_pad_clearance;
+    pad_inner_y_t = snap_y_t + snap_w / 2 + baseplate_pad_clearance;
+    pad_inner_y_b = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
+
+    strut_w = 5;
+    dx = pad_inner_x_r - pad_inner_x_l;
+    dy = pad_inner_y_b - pad_inner_y_t;
+    diag = sqrt(dx * dx + dy * dy);
+    z = outer_h - top_thickness;
+
+    translate([pad_inner_x_l, pad_inner_y_t, z])
+        rotate([0, 0, atan2(dy, dx)])
+            translate([0, -strut_w / 2, 0])
+                cube([diag, strut_w, top_thickness]);
+    translate([pad_inner_x_r, pad_inner_y_t, z])
+        rotate([0, 0, atan2(dy, -dx)])
+            translate([0, -strut_w / 2, 0])
+                cube([diag, strut_w, top_thickness]);
+}
+
 module snaps() {
     // Just the 4 corners of the snap grid. Cap face down (against panel),
     // gripping nubs up into the grid hole.
@@ -199,4 +229,5 @@ difference() {
     side_wall_voids();
     baseplate_window();
 }
+top_x_brace();
 snaps();
