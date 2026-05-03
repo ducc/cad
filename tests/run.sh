@@ -13,7 +13,6 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SNAPSHOTS_DIR="$REPO_ROOT/tests/snapshots"
 DIFFS_DIR="$REPO_ROOT/tests/diffs"
 
 UPDATE=0
@@ -21,7 +20,7 @@ if [[ "${1:-}" == "--update" ]]; then
     UPDATE=1
 fi
 
-mkdir -p "$SNAPSHOTS_DIR" "$DIFFS_DIR"
+mkdir -p "$DIFFS_DIR"
 TMP_DIR="$(mktemp -d)"
 trap "rm -rf $TMP_DIR" EXIT
 
@@ -34,20 +33,23 @@ else
     OSCAD=(xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +extension RENDER -noreset" openscad)
 fi
 
-# Each shot: scad_file shot_name camera imgsize
+# Each shot: project_path shot_name camera imgsize
+# - The SCAD file is at  <project_path>/<basename>.scad   (basename = last path component)
+# - The baseline PNG is at <project_path>/snapshots/<shot_name>.png
+# - The diff PNG is written to tests/diffs/<basename>-<shot_name>.png
 # Camera is OpenSCAD gimbal: tx,ty,tz,rx,ry,rz,dist
 SHOTS=(
-    "usb_eth_mount.scad iso  31.75,29.75,15.875,60,0,225,250 1200,900"
-    "usb_eth_mount.scad top  31.75,29.75,15.875,0,0,0,200    900,900"
-    "usb_eth_mount.scad end  31.75,29.75,15.875,90,0,90,200  1200,900"
+    "opengrid/usb_eth_mount iso  31.75,29.75,15.875,60,0,225,250 1200,900"
+    "opengrid/usb_eth_mount top  31.75,29.75,15.875,0,0,0,200    900,900"
+    "opengrid/usb_eth_mount end  31.75,29.75,15.875,90,0,90,200  1200,900"
 
-    "level1_kvm_mount.scad iso  84,53,33,55,0,225,400 1400,1000"
-    "level1_kvm_mount.scad top  84,53,33,0,0,0,250    1400,900"
-    "level1_kvm_mount.scad side 84,53,33,90,0,90,260  1400,700"
-    "level1_kvm_mount.scad front 84,53,33,90,0,0,300  1400,700"
+    "opengrid/level1_kvm_mount iso   84,53,33,55,0,225,400 1400,1000"
+    "opengrid/level1_kvm_mount top   84,53,33,0,0,0,250    1400,900"
+    "opengrid/level1_kvm_mount side  84,53,33,90,0,90,260  1400,700"
+    "opengrid/level1_kvm_mount front 84,53,33,90,0,0,300   1400,700"
 
-    "snap_fit_test.scad top 0,0,0,0,0,0,80    1200,1200"
-    "snap_fit_test.scad iso 0,0,0,55,0,225,150 1400,1000"
+    "opengrid/snap_fit_test top 0,0,0,0,0,0,80    1200,1200"
+    "opengrid/snap_fit_test iso 0,0,0,55,0,225,150 1400,1000"
 )
 
 # Pixel-difference tolerance.
@@ -84,10 +86,14 @@ diff_cell() {
 }
 
 for shot in "${SHOTS[@]}"; do
-    # Whitespace-separated: scad shot_name camera imgsize
-    read -r scad shot_name camera imgsize _ <<< "$shot"
-    base="${scad%.scad}-${shot_name}"
-    snapshot="$SNAPSHOTS_DIR/$base.png"
+    # Whitespace-separated: project_path shot_name camera imgsize
+    read -r project_path shot_name camera imgsize _ <<< "$shot"
+    project_basename="${project_path##*/}"
+    scad="$REPO_ROOT/$project_path/$project_basename.scad"
+    snapshots_dir="$REPO_ROOT/$project_path/snapshots"
+    mkdir -p "$snapshots_dir"
+    base="${project_basename}-${shot_name}"
+    snapshot="$snapshots_dir/$shot_name.png"
     rendered="$TMP_DIR/$base.png"
 
     printf "%-40s " "$base"
@@ -98,7 +104,7 @@ for shot in "${SHOTS[@]}"; do
                        --imgsize="$imgsize" \
                        --camera="$camera" \
                        -o "$rendered" \
-                       "$REPO_ROOT/$scad" >"$render_log" 2>&1; then
+                       "$scad" >"$render_log" 2>&1; then
         echo "RENDER FAIL"
         cat "$render_log"
         echo "| \`$base\` | 💥 RENDER FAIL | — | — |" >> "$REPORT_MD"

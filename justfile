@@ -14,8 +14,8 @@ approve:
 
 # Render production STLs after passing the regression suite.
 stl: test
-    openscad -o usb_eth_mount.stl    usb_eth_mount.scad
-    openscad -o level1_kvm_mount.stl level1_kvm_mount.scad
+    openscad -o opengrid/usb_eth_mount/usb_eth_mount.stl       opengrid/usb_eth_mount/usb_eth_mount.scad
+    openscad -o opengrid/level1_kvm_mount/level1_kvm_mount.stl opengrid/level1_kvm_mount/level1_kvm_mount.scad
 
 # Open a SCAD file in the OpenSCAD GUI for interactive editing.
 view file:
