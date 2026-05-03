@@ -187,8 +187,10 @@ module baseplate_window() {
 
 // Central block extends past the cut edges and overlaps each corner pad
 // by `top_block_overlap` mm × overlap mm at the inner corner, so the
-// block is fully bonded into all four pads (not just touching at points).
-top_block_overlap = 8;
+// block is fully bonded into all four pads. Hollowed out to leave only
+// a `top_block_frame` mm wide rectangular frame.
+top_block_overlap   = 8;
+top_block_frame     = 5;
 
 module top_center_brace() {
     snap_w = 24.8;
@@ -203,11 +205,19 @@ module top_center_brace() {
     pad_inner_y_b = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
 
     o = top_block_overlap;
+    f = top_block_frame;
     z = outer_h - top_thickness;
-    translate([pad_inner_x_l - o, pad_inner_y_t - o, z])
-        cube([(pad_inner_x_r - pad_inner_x_l) + 2 * o,
-              (pad_inner_y_b - pad_inner_y_t) + 2 * o,
-              top_thickness]);
+    block_x = pad_inner_x_l - o;
+    block_y = pad_inner_y_t - o;
+    block_w = (pad_inner_x_r - pad_inner_x_l) + 2 * o;
+    block_h = (pad_inner_y_b - pad_inner_y_t) + 2 * o;
+
+    difference() {
+        translate([block_x, block_y, z])
+            cube([block_w, block_h, top_thickness]);
+        translate([block_x + f, block_y + f, z - 0.01])
+            cube([block_w - 2 * f, block_h - 2 * f, top_thickness + 0.02]);
+    }
 }
 
 module snaps() {
