@@ -46,9 +46,8 @@ sw_frame_margin = 6;   // solid frame around the braced area on each side wall
 sw_brace_cells  = 3;   // number of side-by-side X-brace cells per side wall
 sw_strut_width  = 5;   // strut width for X braces and inter-cell verticals
 
-// ---- Baseplate window (over the missing 3 middle snap cells) ----
-baseplate_window_w = 70;
-baseplate_window_d = 20;
+// ---- Baseplate cutouts: leave only solid pads around the 4 corner snaps ----
+baseplate_pad_clearance = 3;   // mm of solid baseplate kept around each snap
 
 module shell() {
     union() {
@@ -156,15 +155,32 @@ module side_wall_voids() {
     side_wall_void(outer_w - wall);
 }
 
-// Cuts a rectangular window through the snap baseplate in the empty middle
-// area between the perimeter snaps. Saves filament without compromising
-// snap attachment (each remaining snap keeps a generous solid surround).
+// Cuts a "+" shaped void through the snap baseplate so only solid pads
+// around the 4 corner snaps remain. Each pad is held by its adjacent
+// side wall; the X-braced side walls and bottom lip carry the rigidity.
 module baseplate_window() {
     eps = 1;
-    translate([(outer_w - baseplate_window_w) / 2,
-               (outer_d - baseplate_window_d) / 2,
-               outer_h - top_thickness - eps])
-        cube([baseplate_window_w, baseplate_window_d, top_thickness + 2 * eps]);
+    snap_w = 24.8;
+
+    snap_x_l = snap_x0;
+    snap_x_r = snap_x0 + (snaps_nx - 1) * snap_pitch;
+    snap_y_t = snap_y0;
+    snap_y_b = snap_y0 + (snaps_ny - 1) * snap_pitch;
+
+    cut_x_lo = snap_x_l + snap_w / 2 + baseplate_pad_clearance;
+    cut_x_hi = snap_x_r - snap_w / 2 - baseplate_pad_clearance;
+    cut_y_lo = snap_y_t + snap_w / 2 + baseplate_pad_clearance;
+    cut_y_hi = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
+
+    z_lo = outer_h - top_thickness - eps;
+    z_h  = top_thickness + 2 * eps;
+
+    // Central X strip — between left and right snap columns, full depth.
+    translate([cut_x_lo, -eps, z_lo])
+        cube([cut_x_hi - cut_x_lo, outer_d + 2 * eps, z_h]);
+    // Central Y strip — between front and rear snap rows, full width.
+    translate([-eps, cut_y_lo, z_lo])
+        cube([outer_w + 2 * eps, cut_y_hi - cut_y_lo, z_h]);
 }
 
 module snaps() {
