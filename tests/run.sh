@@ -67,9 +67,21 @@ REPORT_MD="$REPO_ROOT/tests/report.md"
     echo "<!-- image-regression-report -->"
     echo "## 🖼️ Image regression results"
     echo ""
-    echo "| Shot | Status | Pixels differ |"
-    echo "|---|---|---|"
+    echo "| Shot | Status | Pixels differ | Diff |"
+    echo "|---|---|---|---|"
 } > "$REPORT_MD"
+
+# Renders the Diff column. If DIFF_BASE_URL is set (CI publishes diff PNGs
+# to a sidecar branch), we link to the published image so it renders inline
+# in PR comments. Otherwise show a dash.
+diff_cell() {
+    local base=$1
+    if [[ -n "${DIFF_BASE_URL:-}" ]]; then
+        echo "<img src=\"$DIFF_BASE_URL/$base.png\" width=\"320\">"
+    else
+        echo "—"
+    fi
+}
 
 for shot in "${SHOTS[@]}"; do
     # Whitespace-separated: scad shot_name camera imgsize
@@ -89,20 +101,20 @@ for shot in "${SHOTS[@]}"; do
                        "$REPO_ROOT/$scad" >"$render_log" 2>&1; then
         echo "RENDER FAIL"
         cat "$render_log"
-        echo "| \`$base\` | 💥 RENDER FAIL | — |" >> "$REPORT_MD"
+        echo "| \`$base\` | 💥 RENDER FAIL | — | — |" >> "$REPORT_MD"
         fail_count=$((fail_count + 1))
         continue
     fi
     if grep -qE "(WARNING|ERROR)" "$render_log"; then
         echo "RENDER WARN"
         grep -E "(WARNING|ERROR)" "$render_log"
-        echo "| \`$base\` | ⚠️ RENDER WARN | — |" >> "$REPORT_MD"
+        echo "| \`$base\` | ⚠️ RENDER WARN | — | — |" >> "$REPORT_MD"
         fail_count=$((fail_count + 1))
         continue
     fi
     if [[ ! -s "$rendered" ]]; then
         echo "EMPTY OUTPUT"
-        echo "| \`$base\` | 💥 EMPTY OUTPUT | — |" >> "$REPORT_MD"
+        echo "| \`$base\` | 💥 EMPTY OUTPUT | — | — |" >> "$REPORT_MD"
         fail_count=$((fail_count + 1))
         continue
     fi
@@ -118,7 +130,7 @@ for shot in "${SHOTS[@]}"; do
     if [[ ! -f "$snapshot" ]]; then
         cp "$rendered" "$snapshot"
         echo "NEW BASELINE"
-        echo "| \`$base\` | 🆕 NEW BASELINE | — |" >> "$REPORT_MD"
+        echo "| \`$base\` | 🆕 NEW BASELINE | — | — |" >> "$REPORT_MD"
         new_count=$((new_count + 1))
         continue
     fi
@@ -134,7 +146,7 @@ for shot in "${SHOTS[@]}"; do
     ae="${ae_raw%% *}"
     if ! [[ "$ae" =~ ^[0-9]+$ ]]; then
         echo "COMPARE FAIL: $ae_raw"
-        echo "| \`$base\` | 💥 COMPARE FAIL | — |" >> "$REPORT_MD"
+        echo "| \`$base\` | 💥 COMPARE FAIL | — | — |" >> "$REPORT_MD"
         fail_count=$((fail_count + 1))
         continue
     fi
@@ -151,11 +163,12 @@ for shot in "${SHOTS[@]}"; do
     if (( ae > threshold )); then
         printf "FAIL — %d / %d px differ (>%d) — see %s\n" \
                "$ae" "$total" "$threshold" "${diff_img#$REPO_ROOT/}"
-        echo "| \`$base\` | ❌ FAIL | $ae_fmt / $total_fmt |" >> "$REPORT_MD"
+        echo "| \`$base\` | ❌ FAIL | $ae_fmt / $total_fmt | $(diff_cell "$base") |" \
+            >> "$REPORT_MD"
         fail_count=$((fail_count + 1))
     else
         printf "ok    — %d / %d px differ\n" "$ae" "$total"
-        echo "| \`$base\` | ✅ ok | $ae_fmt / $total_fmt |" >> "$REPORT_MD"
+        echo "| \`$base\` | ✅ ok | $ae_fmt / $total_fmt | — |" >> "$REPORT_MD"
         pass_count=$((pass_count + 1))
         rm -f "$diff_img"
     fi
