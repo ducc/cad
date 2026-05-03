@@ -46,8 +46,9 @@ sw_frame_margin = 6;   // solid frame around the braced area on each side wall
 sw_brace_cells  = 3;   // number of side-by-side X-brace cells per side wall
 sw_strut_width  = 5;   // strut width for X braces and inter-cell verticals
 
-// ---- Baseplate cutouts: leave only solid pads around the 4 corner snaps ----
+// ---- Baseplate cutouts: keep the perimeter rectangular frame intact ----
 baseplate_pad_clearance = 3;   // mm of solid baseplate kept around each snap
+baseplate_perim_margin  = 5;   // width of perimeter frame around the cuts
 
 module shell() {
     union() {
@@ -174,13 +175,14 @@ module baseplate_window() {
 
     z_lo = outer_h - top_thickness - eps;
     z_h  = top_thickness + 2 * eps;
+    pm   = baseplate_perim_margin;
 
-    // Central X strip — between left and right snap columns, full depth.
-    translate([cut_x_lo, -eps, z_lo])
-        cube([cut_x_hi - cut_x_lo, outer_d + 2 * eps, z_h]);
-    // Central Y strip — between front and rear snap rows, full width.
-    translate([-eps, cut_y_lo, z_lo])
-        cube([outer_w + 2 * eps, cut_y_hi - cut_y_lo, z_h]);
+    // Central X strip — between left and right snap columns, bounded by perimeter.
+    translate([cut_x_lo, pm, z_lo])
+        cube([cut_x_hi - cut_x_lo, outer_d - 2 * pm, z_h]);
+    // Central Y strip — between front and rear snap rows, bounded by perimeter.
+    translate([pm, cut_y_lo, z_lo])
+        cube([outer_w - 2 * pm, cut_y_hi - cut_y_lo, z_h]);
 }
 
 // Diagonal X brace across the top plate connecting opposite corner pads.
