@@ -33,23 +33,34 @@ else
     OSCAD=(xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +extension RENDER -noreset" openscad)
 fi
 
-# Each shot: project_path shot_name camera imgsize
-# - The SCAD file is at  <project_path>/<basename>.scad   (basename = last path component)
-# - The baseline PNG is at <project_path>/snapshots/<shot_name>.png
-# - The diff PNG is written to tests/diffs/<basename>-<shot_name>.png
-# Camera is OpenSCAD gimbal: tx,ty,tz,rx,ry,rz,dist
+# Each shot: <scad-path> <shot_name> <camera> <imgsize>
+# - Renders <scad-path>
+# - Baseline PNG at  <dirname(scad-path)>/snapshots/<basename(scad-path)>-<shot>.png
+# - Diff PNG at      tests/diffs/<basename(scad-path)>-<shot>.png
+# Camera is OpenSCAD gimbal: tx,ty,tz,rx,ry,rz,dist. Distance is overridden
+# by --viewall, so 0 is fine; only the rotation tuple matters.
+ISO="0,0,0,55,0,225,0"
+TOP="0,0,0,0,0,0,0"
+FRONT="0,0,0,90,0,0,0"
+SIDE="0,0,0,90,0,90,0"
 SHOTS=(
-    "opengrid/usb_eth_mount iso  31.75,29.75,15.875,60,0,225,250 1200,900"
-    "opengrid/usb_eth_mount top  31.75,29.75,15.875,0,0,0,200    900,900"
-    "opengrid/usb_eth_mount end  31.75,29.75,15.875,90,0,90,200  1200,900"
+    "opengrid/usb_eth_mount/usb_eth_mount.scad iso  $ISO  1200,900"
+    "opengrid/usb_eth_mount/usb_eth_mount.scad top  $TOP  900,900"
+    "opengrid/usb_eth_mount/usb_eth_mount.scad end  $SIDE 1200,900"
 
-    "opengrid/level1_kvm_mount iso   84,53,33,55,0,225,400 1400,1000"
-    "opengrid/level1_kvm_mount top   84,53,33,0,0,0,250    1400,900"
-    "opengrid/level1_kvm_mount side  84,53,33,90,0,90,260  1400,700"
-    "opengrid/level1_kvm_mount front 84,53,33,90,0,0,300   1400,700"
+    "opengrid/level1_kvm_mount/level1_kvm_mount.scad iso   $ISO   1400,1000"
+    "opengrid/level1_kvm_mount/level1_kvm_mount.scad top   $TOP   1400,900"
+    "opengrid/level1_kvm_mount/level1_kvm_mount.scad side  $SIDE  1400,700"
+    "opengrid/level1_kvm_mount/level1_kvm_mount.scad front $FRONT 1400,700"
 
-    "opengrid/snap_fit_test top 0,0,0,0,0,0,80    1200,1200"
-    "opengrid/snap_fit_test iso 0,0,0,55,0,225,150 1400,1000"
+    "opengrid/snap_fit_test/snap_fit_test.scad top $TOP 1200,1200"
+    "opengrid/snap_fit_test/snap_fit_test.scad iso $ISO 1400,1000"
+
+    "product/button.scad       iso $ISO 900,900"
+    "product/ssd1306_case.scad iso $ISO 1200,900"
+    "product/product.scad      iso $ISO 1200,900"
+
+    "rs4_fascia/rs4_fascia.scad iso $ISO 1400,1000"
 )
 
 # Pixel-difference tolerance.
@@ -86,21 +97,25 @@ diff_cell() {
 }
 
 for shot in "${SHOTS[@]}"; do
-    # Whitespace-separated: project_path shot_name camera imgsize
-    read -r project_path shot_name camera imgsize _ <<< "$shot"
-    project_basename="${project_path##*/}"
-    scad="$REPO_ROOT/$project_path/$project_basename.scad"
-    snapshots_dir="$REPO_ROOT/$project_path/snapshots"
+    read -r scad_rel shot_name camera imgsize _ <<< "$shot"
+    scad="$REPO_ROOT/$scad_rel"
+    scad_dir="$(dirname "$scad")"
+    scad_basename="$(basename "$scad" .scad)"
+    snapshots_dir="$scad_dir/snapshots"
     mkdir -p "$snapshots_dir"
-    base="${project_basename}-${shot_name}"
-    snapshot="$snapshots_dir/$shot_name.png"
+    base="${scad_basename}-${shot_name}"
+    snapshot="$snapshots_dir/$base.png"
     rendered="$TMP_DIR/$base.png"
 
     printf "%-40s " "$base"
 
     # Render
     render_log="$TMP_DIR/$base.log"
+    # --viewall + --autocenter make OpenSCAD pick a camera distance that
+    # frames the whole model regardless of where the geometry is in space.
+    # The camera string still controls rotation; distance is recomputed.
     if ! "${OSCAD[@]}" --colorscheme=Cornfield \
+                       --viewall --autocenter \
                        --imgsize="$imgsize" \
                        --camera="$camera" \
                        -o "$rendered" \

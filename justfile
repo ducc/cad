@@ -16,6 +16,10 @@ approve:
 stl: test
     openscad -o opengrid/usb_eth_mount/usb_eth_mount.stl       opengrid/usb_eth_mount/usb_eth_mount.scad
     openscad -o opengrid/level1_kvm_mount/level1_kvm_mount.stl opengrid/level1_kvm_mount/level1_kvm_mount.scad
+    openscad -o product/button.stl                             product/button.scad
+    openscad -o product/ssd1306_case.stl                       product/ssd1306_case.scad
+    openscad -o product/product.stl                            product/product.scad
+    openscad -o rs4_fascia/rs4_fascia.stl                      rs4_fascia/rs4_fascia.scad
 
 # Open a SCAD file in the OpenSCAD GUI for interactive editing.
 view file:
