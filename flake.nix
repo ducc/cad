@@ -32,10 +32,21 @@
           buildInputs = [
             pkgs.openscad-unstable
             pkgs.imagemagick      # for tests/run.sh image regression
+            pkgs.xvfb-run         # virtual display so openscad can render headless on CI
+            pkgs.mesa             # software OpenGL (llvmpipe) for headless rendering
+            pkgs.libglvnd         # GL vendor-neutral dispatch
+            pkgs.just             # task runner; see ./justfile
           ];
 
           shellHook = ''
             export OPENSCADPATH=${scadLibs}
+            # libglvnd needs to know where Mesa's GL/EGL implementations live.
+            # Without these, openscad on a non-NixOS host fails with EGL_BAD_DISPLAY
+            # / "Unable to load GLX" because there's no system GL driver.
+            export LIBGL_DRIVERS_PATH=${pkgs.mesa}/lib/dri
+            export __EGL_VENDOR_LIBRARY_FILENAMES=${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json
+            export LIBGL_ALWAYS_SOFTWARE=1
+            export GALLIUM_DRIVER=llvmpipe
             echo "OpenSCAD libraries available at: $OPENSCADPATH"
             echo "  - BOSL2/std.scad"
             echo "  - openGrid/opengrid-snap.scad"

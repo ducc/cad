@@ -8,21 +8,91 @@ on:
 jobs:
   image-regression:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write          # to push diff PNGs to the ci-diffs sidecar branch
+      pull-requests: write     # to post / update the report comment
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: cachix/install-nix-action@v27
+      # Third-party actions pinned to commit SHAs (mitigates supply-chain
+      # tag-rewrite attacks). Refresh the SHAs in the comments on each bump.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: cachix/install-nix-action@ba0dd844c9180cbf77aa72a116d6fbc515d0e87b  # v27
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: Run image regression tests
-        run: nix develop --command tests/run.sh
+      - name: Set diff base URL (PRs only)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "DIFF_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/ci-diffs/pr-${{ github.event.pull_request.number }}" >> "$GITHUB_ENV"
 
-      - name: Upload diff images on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - name: Run image regression tests
+        id: tests
+        run: nix develop --command just test
+        continue-on-error: true
+
+      - name: Upload diff images
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: image-diffs
           path: tests/diffs/
           if-no-files-found: ignore
+
+      # Push diff PNGs to a `ci-diffs` orphan branch, scoped to this PR's
+      # subdirectory, so they're addressable via raw.githubusercontent.com
+      # and render inline in the comment posted below.
+      - name: Publish diffs to ci-diffs branch
+        if: github.event_name == 'pull_request' && hashFiles('tests/diffs/*.png') != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SOURCE_DIFFS="$(pwd)/tests/diffs"
+          REMOTE="https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
+
+          tmp=$(mktemp -d)
+          cd "$tmp"
+          git init -q -b ci-diffs
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "$REMOTE"
+
+          # If the branch exists upstream, start from it; otherwise the empty
+          # init above is our starting point.
+          if git fetch --depth 1 origin ci-diffs 2>/dev/null; then
+              git reset --hard FETCH_HEAD
+          fi
+
+          rm -rf "pr-$PR_NUMBER"
+          mkdir -p "pr-$PR_NUMBER"
+          cp "$SOURCE_DIFFS"/*.png "pr-$PR_NUMBER/"
+
+          git add "pr-$PR_NUMBER"
+          if ! git diff --cached --quiet; then
+              git commit -q -m "diffs for PR #$PR_NUMBER @ $SHA"
+              git push -q origin HEAD:ci-diffs
+          fi
+
+      # Find any prior comment by the hidden marker so we update in place.
+      - name: Find existing report comment
+        if: github.event_name == 'pull_request'
+        id: find-comment
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e  # v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: "<!-- image-regression-report -->"
+
+      - name: Comment results on PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043  # v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: tests/report.md
+          edit-mode: replace
+
+      - name: Fail job if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
