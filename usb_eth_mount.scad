@@ -11,7 +11,7 @@ device_l = 54;   // Y (between back wall and slide-in opening)
 device_d = 23;   // Z (between floor and snap baseplate)
 
 clearance       = 0.75;
-wall            = 2;
+wall            = 3;
 floor_thickness = 2;
 top_thickness   = 4;
 
