@@ -8,6 +8,9 @@ on:
 jobs:
   image-regression:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -17,12 +20,36 @@ jobs:
             experimental-features = nix-command flakes
 
       - name: Run image regression tests
+        id: tests
         run: nix develop --command tests/run.sh
+        continue-on-error: true
 
-      - name: Upload diff images on failure
-        if: failure()
+      - name: Upload diff images
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: image-diffs
           path: tests/diffs/
           if-no-files-found: ignore
+
+      # Find any prior comment by the hidden marker so we update in place.
+      - name: Find existing report comment
+        if: github.event_name == 'pull_request'
+        id: find-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: "<!-- image-regression-report -->"
+
+      - name: Comment results on PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: tests/report.md
+          edit-mode: replace
+
+      - name: Fail job if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
