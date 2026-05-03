@@ -168,18 +168,14 @@ module baseplate_window() {
 }
 
 module snaps() {
-    // Cap face down (against panel), gripping nubs up into the grid hole.
-    // Perimeter-only: skip the interior of the grid, keep all edge cells.
-    for (i = [0 : snaps_nx - 1], j = [0 : snaps_ny - 1]) {
-        on_perimeter = (i == 0 || i == snaps_nx - 1 ||
-                        j == 0 || j == snaps_ny - 1);
-        if (on_perimeter)
-            translate([snap_x0 + i * snap_pitch,
-                       snap_y0 + j * snap_pitch,
-                       outer_h + snap_h_lite])
-                rotate([180, 0, 0])
-                    openGridSnap(lite=true, anchor=BOTTOM);
-    }
+    // Just the 4 corners of the snap grid. Cap face down (against panel),
+    // gripping nubs up into the grid hole.
+    for (i = [0, snaps_nx - 1], j = [0, snaps_ny - 1])
+        translate([snap_x0 + i * snap_pitch,
+                   snap_y0 + j * snap_pitch,
+                   outer_h + snap_h_lite])
+            rotate([180, 0, 0])
+                openGridSnap(lite=true, anchor=BOTTOM);
 }
 
 difference() {
