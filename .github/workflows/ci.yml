@@ -12,9 +12,10 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: cachix/install-nix-action@v27
+      # Third-party actions pinned to commit SHAs (mitigates supply-chain
+      # tag-rewrite attacks). Refresh the SHAs in the comments on each bump.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: cachix/install-nix-action@ba0dd844c9180cbf77aa72a116d6fbc515d0e87b  # v27
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -26,7 +27,7 @@ jobs:
 
       - name: Upload diff images
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: image-diffs
           path: tests/diffs/
@@ -36,14 +37,14 @@ jobs:
       - name: Find existing report comment
         if: github.event_name == 'pull_request'
         id: find-comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e  # v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: "<!-- image-regression-report -->"
 
       - name: Comment results on PR
         if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043  # v4
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
