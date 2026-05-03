@@ -8,7 +8,7 @@ include <BOSL2/std.scad>
 use <openGrid/opengrid-snap.scad>
 
 // ---- Device & build parameters ----
-device_w = 156;   // X (between the two end walls)
+device_w = 157.5; // X (between the two end walls)
 device_d = 101;   // Y (front to rear; no walls on these faces)
 device_h = 58;    // Z (between bottom lip and snap baseplate)
 
