@@ -185,9 +185,11 @@ module baseplate_window() {
         cube([outer_w - 2 * pm, cut_y_hi - cut_y_lo, z_h]);
 }
 
-// Central block spanning the gap between the 4 corner snap pads. Sits
-// flush against the inner edge of each pad so the snaps are bonded
-// directly to a single rigid plate. Added after the baseplate cuts.
+// Central block extends past the cut edges and overlaps each corner pad
+// by `top_block_overlap` mm × overlap mm at the inner corner, so the
+// block is fully bonded into all four pads (not just touching at points).
+top_block_overlap = 8;
+
 module top_center_brace() {
     snap_w = 24.8;
     snap_x_l = snap_x0;
@@ -200,10 +202,11 @@ module top_center_brace() {
     pad_inner_y_t = snap_y_t + snap_w / 2 + baseplate_pad_clearance;
     pad_inner_y_b = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
 
+    o = top_block_overlap;
     z = outer_h - top_thickness;
-    translate([pad_inner_x_l, pad_inner_y_t, z])
-        cube([pad_inner_x_r - pad_inner_x_l,
-              pad_inner_y_b - pad_inner_y_t,
+    translate([pad_inner_x_l - o, pad_inner_y_t - o, z])
+        cube([(pad_inner_x_r - pad_inner_x_l) + 2 * o,
+              (pad_inner_y_b - pad_inner_y_t) + 2 * o,
               top_thickness]);
 }
 
