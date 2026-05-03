@@ -35,6 +35,7 @@
             pkgs.xvfb-run         # virtual display so openscad can render headless on CI
             pkgs.mesa             # software OpenGL (llvmpipe) for headless rendering
             pkgs.libglvnd         # GL vendor-neutral dispatch
+            pkgs.just             # task runner; see ./justfile
           ];
 
           shellHook = ''

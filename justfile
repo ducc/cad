@@ -1,0 +1,26 @@
+# Common tasks for the CAD repo. Run inside `nix develop`.
+# `just` (no args) prints this list.
+
+default:
+    @just --list
+
+# Run the image regression suite against the committed baselines.
+test:
+    tests/run.sh
+
+# Regenerate baseline PNGs (use after an intentional CAD change).
+update-baselines:
+    tests/run.sh --update
+
+# Render production STLs after passing the regression suite.
+stl: test
+    openscad -o usb_eth_mount.stl    usb_eth_mount.scad
+    openscad -o level1_kvm_mount.stl level1_kvm_mount.scad
+
+# Open a SCAD file in the OpenSCAD GUI for interactive editing.
+view file:
+    openscad "{{file}}"
+
+# Clear test diff images and the generated report.
+clean:
+    rm -rf tests/diffs tests/report.md
