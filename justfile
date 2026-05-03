@@ -8,8 +8,8 @@ default:
 test:
     tests/run.sh
 
-# Regenerate baseline PNGs (use after an intentional CAD change).
-update-baselines:
+# Approve current renders as new baselines (use after intentional CAD changes).
+approve:
     tests/run.sh --update
 
 # Render production STLs after passing the regression suite.

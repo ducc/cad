@@ -27,7 +27,7 @@ jobs:
 
       - name: Run image regression tests
         id: tests
-        run: nix develop --command tests/run.sh
+        run: nix develop --command just test
         continue-on-error: true
 
       - name: Upload diff images
