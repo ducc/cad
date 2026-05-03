@@ -185,34 +185,30 @@ module baseplate_window() {
         cube([outer_w - 2 * pm, cut_y_hi - cut_y_lo, z_h]);
 }
 
-// Diagonal X brace across the top plate connecting opposite corner pads.
-// Added after the baseplate cuts (otherwise they'd remove it).
-module top_x_brace() {
-    snap_w = 24.8;
-    snap_x_l = snap_x0;
-    snap_x_r = snap_x0 + (snaps_nx - 1) * snap_pitch;
-    snap_y_t = snap_y0;
-    snap_y_b = snap_y0 + (snaps_ny - 1) * snap_pitch;
-
-    pad_inner_x_l = snap_x_l + snap_w / 2 + baseplate_pad_clearance;
-    pad_inner_x_r = snap_x_r - snap_w / 2 - baseplate_pad_clearance;
-    pad_inner_y_t = snap_y_t + snap_w / 2 + baseplate_pad_clearance;
-    pad_inner_y_b = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
-
-    strut_w = 5;
-    dx = pad_inner_x_r - pad_inner_x_l;
-    dy = pad_inner_y_b - pad_inner_y_t;
-    diag = sqrt(dx * dx + dy * dy);
+// Central square block on the top plate with 4 cardinal bridges out to
+// the perimeter frame. Joins the 4 corner pads together through the
+// perimeter without crossing the middle diagonally. Added after the
+// baseplate cuts so they don't remove it.
+module top_center_brace() {
     z = outer_h - top_thickness;
+    square_size = 20;
+    bridge_w    = 5;
+    cx = outer_w / 2;
+    cy = outer_d / 2;
 
-    translate([pad_inner_x_l, pad_inner_y_t, z])
-        rotate([0, 0, atan2(dy, dx)])
-            translate([0, -strut_w / 2, 0])
-                cube([diag, strut_w, top_thickness]);
-    translate([pad_inner_x_r, pad_inner_y_t, z])
-        rotate([0, 0, atan2(dy, -dx)])
-            translate([0, -strut_w / 2, 0])
-                cube([diag, strut_w, top_thickness]);
+    // Central square hub
+    translate([cx - square_size / 2, cy - square_size / 2, z])
+        cube([square_size, square_size, top_thickness]);
+
+    // Cardinal bridges out to the perimeter
+    translate([cx - bridge_w / 2, 0, z])
+        cube([bridge_w, cy - square_size / 2, top_thickness]);
+    translate([cx - bridge_w / 2, cy + square_size / 2, z])
+        cube([bridge_w, outer_d - (cy + square_size / 2), top_thickness]);
+    translate([0, cy - bridge_w / 2, z])
+        cube([cx - square_size / 2, bridge_w, top_thickness]);
+    translate([cx + square_size / 2, cy - bridge_w / 2, z])
+        cube([outer_w - (cx + square_size / 2), bridge_w, top_thickness]);
 }
 
 module snaps() {
@@ -231,5 +227,5 @@ difference() {
     side_wall_voids();
     baseplate_window();
 }
-top_x_brace();
+top_center_brace();
 snaps();
