@@ -11,24 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Nix's openscad is linked through libglvnd and needs an actual GL
-      # implementation at runtime. Xvfb provides a display but no GL, so
-      # install Mesa system-wide and point libglvnd at it via LD_LIBRARY_PATH.
-      - name: Install system Mesa
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgl1 libegl1 libglx-mesa0 libgl1-mesa-dri \
-            libglapi-mesa libxcb-glx0
-
       - uses: cachix/install-nix-action@v27
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
       - name: Run image regression tests
-        env:
-          LD_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu
         run: nix develop --command tests/run.sh
 
       - name: Upload diff images on failure

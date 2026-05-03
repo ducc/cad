@@ -26,11 +26,12 @@ TMP_DIR="$(mktemp -d)"
 trap "rm -rf $TMP_DIR" EXIT
 
 # OpenSCAD's offscreen renderer still needs a display. On CI / headless
-# machines, wrap it with xvfb-run so it gets a virtual one.
+# machines, wrap it with xvfb-run so it gets a virtual one. Pass GLX +
+# RENDER + 24-bit depth so Mesa's software GL can attach.
 if [[ -n "${DISPLAY:-}" ]]; then
     OSCAD=(openscad)
 else
-    OSCAD=(xvfb-run -a openscad)
+    OSCAD=(xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +extension RENDER -noreset" openscad)
 fi
 
 # Each shot: scad_file shot_name camera imgsize
