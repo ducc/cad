@@ -46,9 +46,9 @@ sw_frame_margin = 6;   // solid frame around the braced area on each side wall
 sw_brace_cells  = 3;   // number of side-by-side X-brace cells per side wall
 sw_strut_width  = 5;   // strut width for X braces and inter-cell verticals
 
-// ---- Baseplate cutouts: keep the perimeter rectangular frame intact ----
-baseplate_pad_clearance = 3;   // mm of solid baseplate kept around each snap
-baseplate_perim_margin  = 5;   // width of perimeter frame around the cuts
+// ---- Top plate hole: small rectangular pass-through, plate is otherwise solid ----
+hole_w = 40;   // X extent of the central hole
+hole_d = 20;   // Y extent of the central hole
 
 module shell() {
     union() {
@@ -156,72 +156,15 @@ module side_wall_voids() {
     side_wall_void(outer_w - wall);
 }
 
-// Cuts a "+" shaped void through the snap baseplate so only solid pads
-// around the 4 corner snaps remain. Each pad is held by its adjacent
-// side wall; the X-braced side walls and bottom lip carry the rigidity.
-module baseplate_window() {
+// Small central rectangular pass-through hole through the otherwise solid top.
+module top_hole() {
     eps = 1;
-    snap_w = 24.8;
-
-    snap_x_l = snap_x0;
-    snap_x_r = snap_x0 + (snaps_nx - 1) * snap_pitch;
-    snap_y_t = snap_y0;
-    snap_y_b = snap_y0 + (snaps_ny - 1) * snap_pitch;
-
-    cut_x_lo = snap_x_l + snap_w / 2 + baseplate_pad_clearance;
-    cut_x_hi = snap_x_r - snap_w / 2 - baseplate_pad_clearance;
-    cut_y_lo = snap_y_t + snap_w / 2 + baseplate_pad_clearance;
-    cut_y_hi = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
-
-    z_lo = outer_h - top_thickness - eps;
-    z_h  = top_thickness + 2 * eps;
-    pm   = baseplate_perim_margin;
-
-    // Central X strip — between left and right snap columns, bounded by perimeter.
-    translate([cut_x_lo, pm, z_lo])
-        cube([cut_x_hi - cut_x_lo, outer_d - 2 * pm, z_h]);
-    // Central Y strip — between front and rear snap rows, bounded by perimeter.
-    translate([pm, cut_y_lo, z_lo])
-        cube([outer_w - 2 * pm, cut_y_hi - cut_y_lo, z_h]);
+    translate([(outer_w - hole_w) / 2,
+               (outer_d - hole_d) / 2,
+               outer_h - top_thickness - eps])
+        cube([hole_w, hole_d, top_thickness + 2 * eps]);
 }
 
-// Central block extends past the cut edges and overlaps each corner pad
-// by `top_block_overlap` mm × overlap mm at the inner corner, so the
-// block is fully bonded into all four pads. Hollowed out to leave only
-// a `top_block_frame` mm wide rectangular frame.
-top_block_overlap   = 8;
-top_block_frame     = 5;
-
-module top_center_brace() {
-    snap_w = 24.8;
-    snap_x_l = snap_x0;
-    snap_x_r = snap_x0 + (snaps_nx - 1) * snap_pitch;
-    snap_y_t = snap_y0;
-    snap_y_b = snap_y0 + (snaps_ny - 1) * snap_pitch;
-
-    pad_inner_x_l = snap_x_l + snap_w / 2 + baseplate_pad_clearance;
-    pad_inner_x_r = snap_x_r - snap_w / 2 - baseplate_pad_clearance;
-    pad_inner_y_t = snap_y_t + snap_w / 2 + baseplate_pad_clearance;
-    pad_inner_y_b = snap_y_b - snap_w / 2 - baseplate_pad_clearance;
-
-    o = top_block_overlap;
-    f = top_block_frame;
-    z = outer_h - top_thickness;
-    block_x = pad_inner_x_l - o;
-    block_y = pad_inner_y_t - o;
-    block_w = (pad_inner_x_r - pad_inner_x_l) + 2 * o;
-    block_h = (pad_inner_y_b - pad_inner_y_t) + 2 * o;
-
-    difference() {
-        translate([block_x, block_y, z])
-            cube([block_w, block_h, top_thickness]);
-        translate([block_x + f, block_y + f, z - 0.01])
-            cube([block_w - 2 * f, block_h - 2 * f, top_thickness + 0.02]);
-    }
-}
-
-// Mid-X column index on the snap grid. Used by both the snaps and the
-// extra baseplate pads so the two stay in sync.
 snap_mid_x = floor((snaps_nx - 1) / 2);
 
 module snaps() {
@@ -240,28 +183,9 @@ module snaps() {
                 openGridSnap(lite=true, anchor=BOTTOM);
 }
 
-// Solid baseplate pads around the two extra mid-edge snaps. The
-// baseplate_window cut clears the central column, so without these the
-// new snaps would have nothing to attach to. The pads overlap the
-// top_center_brace's front/rear frame walls, bonding them into the rest
-// of the baseplate via the brace.
-module extra_snap_pads() {
-    snap_w = 24.8;
-    pad_w  = snap_w + 2 * baseplate_pad_clearance;
-    z      = outer_h - top_thickness;
-    pad_x  = snap_x0 + snap_mid_x * snap_pitch - pad_w / 2;
-    for (j = [0, snaps_ny - 1]) {
-        pad_y = snap_y0 + j * snap_pitch - pad_w / 2;
-        translate([pad_x, pad_y, z])
-            cube([pad_w, pad_w, top_thickness]);
-    }
-}
-
 difference() {
     shell();
     side_wall_voids();
-    baseplate_window();
+    top_hole();
 }
-top_center_brace();
-extra_snap_pads();
 snaps();
