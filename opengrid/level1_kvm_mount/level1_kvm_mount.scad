@@ -8,7 +8,7 @@ include <BOSL2/std.scad>
 use <openGrid/opengrid-snap.scad>
 
 // ---- Device & build parameters ----
-device_w = 157.5; // X (between the two end walls)
+device_w = 161;   // X (between the two end walls)
 device_d = 101;   // Y (front to rear; no walls on these faces)
 device_h = 58;    // Z (between bottom lip and snap baseplate)
 
@@ -220,15 +220,41 @@ module top_center_brace() {
     }
 }
 
+// Mid-X column index on the snap grid. Used by both the snaps and the
+// extra baseplate pads so the two stay in sync.
+snap_mid_x = floor((snaps_nx - 1) / 2);
+
 module snaps() {
-    // Just the 4 corners of the snap grid. Cap face down (against panel),
-    // gripping nubs up into the grid hole.
-    for (i = [0, snaps_nx - 1], j = [0, snaps_ny - 1])
-        translate([snap_x0 + i * snap_pitch,
-                   snap_y0 + j * snap_pitch,
+    // 4 corner snaps + 2 mid-X-edge snaps (front and rear). Cap face down
+    // (against panel), gripping nubs up into the grid hole.
+    positions = [
+        [0,             0],              [snaps_nx - 1, 0],
+        [0,             snaps_ny - 1],   [snaps_nx - 1, snaps_ny - 1],
+        [snap_mid_x,    0],              [snap_mid_x,   snaps_ny - 1],
+    ];
+    for (p = positions)
+        translate([snap_x0 + p[0] * snap_pitch,
+                   snap_y0 + p[1] * snap_pitch,
                    outer_h + snap_h_lite])
             rotate([180, 0, 0])
                 openGridSnap(lite=true, anchor=BOTTOM);
+}
+
+// Solid baseplate pads around the two extra mid-edge snaps. The
+// baseplate_window cut clears the central column, so without these the
+// new snaps would have nothing to attach to. The pads overlap the
+// top_center_brace's front/rear frame walls, bonding them into the rest
+// of the baseplate via the brace.
+module extra_snap_pads() {
+    snap_w = 24.8;
+    pad_w  = snap_w + 2 * baseplate_pad_clearance;
+    z      = outer_h - top_thickness;
+    pad_x  = snap_x0 + snap_mid_x * snap_pitch - pad_w / 2;
+    for (j = [0, snaps_ny - 1]) {
+        pad_y = snap_y0 + j * snap_pitch - pad_w / 2;
+        translate([pad_x, pad_y, z])
+            cube([pad_w, pad_w, top_thickness]);
+    }
 }
 
 difference() {
@@ -237,4 +263,5 @@ difference() {
     baseplate_window();
 }
 top_center_brace();
+extra_snap_pads();
 snaps();
